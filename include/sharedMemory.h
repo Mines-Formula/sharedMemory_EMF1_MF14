@@ -95,7 +95,7 @@ private:
  
 
 public:
-    SharedMemoryManager(MF26::v2::VehicleState *ptr_vehicleState,MF26::v2::VCUCommand *ptr_vcuCommand, SharedMemoryManagerMode sharedMemoryManagerMode);
+    SharedMemoryManager(MF26::v3::VehicleState *ptr_vehicleState,MF26::v3::VCUCommand *ptr_vcuCommand, SharedMemoryManagerMode sharedMemoryManagerMode);
     bool setData();
     bool getData();
 
