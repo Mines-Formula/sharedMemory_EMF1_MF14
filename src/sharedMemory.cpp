@@ -9,27 +9,45 @@ SharedMemoryManager::SharedMemoryManager(MF26::v3::VehicleState *ptr_vehicleStat
         this->vcuCommandSharedMemory.vcuCommand = ptr_vcuCommand;
                 //keep seeing if shared memory is there yet
 
-        if(mode==SharedMemoryManagerMode::SERVER){
-            //make shared memory
-            while(!(this->makeSharedMemory())){
-                std::cout << "Failed to make memory trying again"<< std::endl;   
+        //connect to exsisting memory
+        if(!(this->connectSharedMemory())){
+            //make shared memory if server emediatly
+            if(mode==SharedMemoryManagerMode::SERVER){
+
+                if(!(this->makeSharedMemory())){
+                    std::cout << "Failed to make memory"<< std::endl;   
+                    this->state=SharedMemoryManagerState::Disconnected;
+                }else{
+                    this->state=SharedMemoryManagerState::Connected;
+                }
+            //make shared memory if other after wait emediatly
+            }else{
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                //make sure still no share moemory
+                if(!(this->connectSharedMemory())){
+                    //make shared memory
+                    if(!(this->makeSharedMemory())){
+                        //failed to make shared memory
+                        std::cout << "Failed to make memory"<< std::endl;
+                        this->state=SharedMemoryManagerState::Disconnected;
+                    }else{
+                        //created shared memroy succesfuly
+                    this->state=SharedMemoryManagerState::Connected;
+                    }   
+            
+                }else{
+                    //still no shared memory
+                    this->state=SharedMemoryManagerState::Connected;
+                }
             }
 
         }else{
-            //connect to exsisting memory
-            while(!(this->connectSharedMemory())){
-                std::cout << "Failed to connect memory trying again"<< std::endl;   
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }
-        }
-
-
-                
-                
-
-
+            this->state=SharedMemoryManagerState::Connected;
+        }  
+    
 }
+                       
+
 
 
 
@@ -72,25 +90,16 @@ bool SharedMemoryManager::connectSharedMemory(){
             boost::interprocess::open_only,
             "SharedMemory"
         );
-
         auto result = segment->find<VehicleStateSharedMemoryPacket>("VehicleState");
         if (result.first == nullptr) {
             return false;
         }
-
         this->vehicleStateSharedMemory.sharedMemory = result.first;
-
         auto result2 = segment->find<VCUCommandSharedMemoryPacket>("VCUCommand");
         if (result2.first == nullptr) {
             return false;
         }
-
         this->vcuCommandSharedMemory.sharedMemory = result2.first;
-
-
-
-
-
         return true;
 
     }
@@ -102,29 +111,17 @@ bool SharedMemoryManager::connectSharedMemory(){
 
 
 bool SharedMemoryManager::setData(){
-    
             switch(mode) {
-
             case SharedMemoryManagerMode::SERVER:
                 return setVehicleState();
-
             break;
-            case SharedMemoryManagerMode::VCU:
-                
+            case SharedMemoryManagerMode::VCU:    
                 return setVCU();
-                
-    
             break;
             case SharedMemoryManagerMode::SCREEN:
                 return false;
-    
             break;
-
-    
-
-        }
-        
-    
+        }     
     }
 
     

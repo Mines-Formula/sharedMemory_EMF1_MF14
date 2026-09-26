@@ -15,7 +15,11 @@ enum class SharedMemoryManagerMode{
     SCREEN,
     SERVER
 };
-
+enum class SharedMemoryManagerState{
+    Connecting,
+    Connected,
+    Disconnected
+};
 
 struct ProtoPacket{
     size_t dataSize=0;
@@ -25,12 +29,10 @@ struct ProtoPacket{
 
 // vehicle state stuff
 struct VehicleStateSharedMemoryPacket {
-
     std::atomic<uint8_t> writerCounter=0;
     std::atomic<uint8_t> readerCounterVCU=0;
     std::atomic<uint8_t> readerCounterScreen=0;
 
-    
     ProtoPacket packetA;
     ProtoPacket packetB;
 };
@@ -68,17 +70,16 @@ struct VCUCommandSharedMemory{
 class SharedMemoryManager
 {
 private:
+    SharedMemoryManagerState state = SharedMemoryManagerState::Connecting;
     SharedMemoryManagerMode mode;
     std::unique_ptr<boost::interprocess::managed_shared_memory> segment;
 
 
     //general shared memory
-
     VehicleStateSharedMemory vehicleStateSharedMemory;
 
 
     //VCU shared memory
-
     VCUCommandSharedMemory vcuCommandSharedMemory;
 
     bool makeSharedMemory();
